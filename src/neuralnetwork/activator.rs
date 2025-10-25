@@ -1,22 +1,40 @@
 use core::f32;
 
+use serde::{Deserialize, Serialize};
+
 pub trait Activator {
     fn activation(&self, x: f32) -> f32;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum ActivatorFn {
+    #[serde(rename = "binary")]
     Binary(Binary),
+    #[serde(rename = "tanh")]
     Tanh(HyperbolicTangent),
+    #[serde(rename = "logistic")]
     Logistic(Logistic),
+    #[serde(rename = "gaussian")]
+    Gaussian(Gaussian),
 }
 
 impl ActivatorFn {
+    pub const fn name_as_str(&self) -> &'static str {
+        match self {
+            Self::Binary(_) => "binary",
+            Self::Tanh(_) => "tanh",
+            Self::Logistic(_) => "logistic",
+            Self::Gaussian(_) => "gaussian",
+        }
+    }
+
     pub const fn activator(&self) -> &dyn Activator {
         match self {
             Self::Binary(bin) => bin,
             Self::Tanh(tanh) => tanh,
             Self::Logistic(logis) => logis,
+            Self::Gaussian(gauss) => gauss,
         }
     }
 }
@@ -33,11 +51,12 @@ impl Activator for ActivatorFn {
             Self::Binary(bin) => bin.activation(x),
             Self::Tanh(tanh) => tanh.activation(x),
             Self::Logistic(logis) => logis.activation(x),
+            Self::Gaussian(gauss) => gauss.activation(x),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Binary {
     pub threshold: f32,
     pub low: f32,
@@ -70,7 +89,7 @@ impl Activator for Binary {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HyperbolicTangent;
 
 impl Activator for HyperbolicTangent {
@@ -79,7 +98,7 @@ impl Activator for HyperbolicTangent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Logistic;
 
 impl Activator for Logistic {
@@ -88,7 +107,7 @@ impl Activator for Logistic {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Gaussian {
     pub mean: f32,
     pub std_dev: f32,

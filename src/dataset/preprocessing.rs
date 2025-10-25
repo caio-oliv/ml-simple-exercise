@@ -70,8 +70,17 @@ impl fmt::Display for ImportCsvError {
             Self::UnreadableHeader => {
                 f.write_str("unreadable header error")?;
             }
-            Self::RecordLength { position, .. } => {
+            Self::RecordLength {
+                position,
+                len,
+                expected_len,
+            } => {
                 fmt_variant_message(f, "unequal record length error", position.as_ref())?;
+                f.write_str(" (expected: ")?;
+                expected_len.fmt(f)?;
+                f.write_str(", found: ")?;
+                len.fmt(f)?;
+                f.write_str(")")?;
             }
             Self::Deserialize { position, error } => {
                 fmt_variant_message_with_error(
@@ -87,6 +96,19 @@ impl fmt::Display for ImportCsvError {
         }
 
         Ok(())
+    }
+}
+
+impl error::Error for ImportCsvError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::IO(error) => Some(error),
+            Self::Utf8 { error, .. } => Some(error),
+            Self::UnreadableHeader => None,
+            Self::RecordLength { .. } => None,
+            Self::Deserialize { error, .. } => Some(error),
+            Self::Unknown => None,
+        }
     }
 }
 
